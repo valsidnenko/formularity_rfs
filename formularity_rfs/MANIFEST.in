@@ -1,3 +1,0 @@
-include collocations.txt
-include stopwords.txt
-include README.md
