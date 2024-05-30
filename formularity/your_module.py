@@ -1,4 +1,3 @@
-
 import re
 import os
 import spacy
@@ -127,15 +126,58 @@ class FormularityRFS:
         for word in ngram_words:
             marked_text = re.sub(f"(?i)\\b{re.escape(word)}\\b", f"<strong style='color: green; text-decoration: underline;'>{word}</strong>", marked_text)
 
-        print("Лемматизированные слова:", lemmatized_words)
-        print("Междометия:", interjections)
-        print("Биграммы:", dash)
-        print("Найденные фразеологизмы:", found_collocations)
-        print("Найденные уникальные н-граммы:", filtered_ngrams)
-        print("Коэффициент для междометий:", 0.1 * interjection_count)
-        print("Коэффициент для фразеологизмов:", 0.1 * collocation_count)
-        print("Коэффициент для биграмм:", 0.1 * dash_count)
-        print("Коэффициент для н-грамм:", score_increase)
-        print("VOCD Score:", vocd_score)
-
         return formulaicity_score, marked_text, filtered_ngrams
+
+def main():
+    input_file = "songs.txt"
+    output_file = "results.html"
+    collocations_file = "collocations.txt"
+    stopwords_file = "stopwords.txt"
+    
+    if not os.path.exists(input_file):
+        with open(input_file, "w", encoding="utf-8") as f:
+            f.write("")
+        print(f"Пожалуйста, добавьте тексты песен в файл {input_file} и запустите скрипт снова.")
+        return
+
+    # Чтение фразеологизмов
+    collocations = []
+    if os.path.exists(collocations_file):
+        with open(collocations_file, "r", encoding="utf-8") as f:
+            collocations = [line.strip() for line in f.readlines() if line.strip()]
+
+    # Чтение стоп-слов
+    stopwords = []
+    if os.path.exists(stopwords_file):
+        with open(stopwords_file, "r", encoding="utf-8") as f:
+            stopwords = f.read().splitlines()
+
+    # Инициализация объекта анализатора
+    analyzer = FormularityRFS(collocations_file, stopwords_file)
+
+    if os.path.exists(input_file) and os.path.getsize(input_file) > 0:
+        with open(input_file, "r", encoding="utf-8") as f:
+            songs = f.read().split("+")
+
+        results = [
+            "<html>",
+            "<head><meta charset='utf-8'><title>Результаты анализа песен</title></head>",
+            "<body>"
+        ]
+        for i, song in enumerate(songs):
+            song = song.strip()
+            if song:
+                formulaicity_score, marked_text, filtered_ngrams = analyzer.calculate_formulaicity(song)
+                ngram_list_html = "<ul>" + "".join([f"<li>{ngram}</li>" for ngram in filtered_ngrams]) + "</ul>"
+                results.append(f"<h2>Песня {i+1}</h2><p>{marked_text}</p><p><strong>Найденные н-граммы:</strong> {ngram_list_html}</p><p><strong>Коэффициент формульности:</strong> {formulaicity_score}</p>")
+
+        results.append("</body></html>")
+
+        # Запись результатов в выходной файл
+        with open(output_file, "w", encoding="utf-8") as f:
+            f.write("\n\n".join(results))
+
+        print(f"Результаты записаны в файл {output_file}, он появится в течение минуты.")
+    else:
+        print(f"Пустой файл {input_file} будет создан в течение минуты. Пожалуйста, добавьте тексты песен и запустите код снова.")
+
