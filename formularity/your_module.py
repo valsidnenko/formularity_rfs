@@ -143,7 +143,7 @@ def analyse(input_file="songs.txt", output_file="results.html", collocations_fil
     if not os.path.exists(input_file):
         with open(input_file, "w", encoding="utf-8") as f:
             f.write("")
-        print(f"Please add song texts to the file {input_file} and run the script again.")
+        print(f"Файл {input_file} появится в течение минуты. Пожалуйста, добавьте тексты песен в {input_file}, разделяя их знаком +, и запустите код заново.")
         return
 
     # Read collocations
@@ -167,7 +167,7 @@ def analyse(input_file="songs.txt", output_file="results.html", collocations_fil
 
         results = [
             "<html>",
-            "<head><meta charset='utf-8'><title>Results of Song Analysis</title></head>",
+            "<head><meta charset='utf-8'><title>Результаты анализа</title></head>",
             "<body>"
         ]
         for i, song in enumerate(songs):
@@ -175,7 +175,7 @@ def analyse(input_file="songs.txt", output_file="results.html", collocations_fil
             if song:
                 formulaicity_score, marked_text, filtered_ngrams = analyzer.calculate_formulaicity(song)
                 ngram_list_html = "<ul>" + "".join([f"<li>{ngram}</li>" for ngram in filtered_ngrams]) + "</ul>"
-                results.append(f"<h2>Song {i+1}</h2><p>{marked_text}</p><p><strong>Found n-grams:</strong> {ngram_list_html}</p><p><strong>Formulaicity coefficient:</strong> {formulaicity_score}</p>")
+                results.append(f"<h2>Песня {i+1}</h2><p>{marked_text}</p><p><strong>Найденные n-граммы:</strong> {ngram_list_html}</p><p><strong>Formulaicity coefficient:</strong> {formulaicity_score}</p>")
 
         results.append("</body></html>")
 
@@ -183,8 +183,8 @@ def analyse(input_file="songs.txt", output_file="results.html", collocations_fil
         with open(output_file, "w", encoding="utf-8") as f:
             f.write("\n\n".join(results))
 
-        print(f"Results written to the file {output_file}, it will appear within a minute.")
+        print(f"Результаты записаны в файл {output_file}, он появится в течение минуты.")
     else:
-        print(f"An empty file {input_file} will be created within a minute. Please add song texts and run the code again.")
+        print(f"Файл {input_file} появится в течение минуты. Пожалуйста, добавьте тексты песен в {input_file}, разделяя их знаком +, и запустите код снова.")
 
 
