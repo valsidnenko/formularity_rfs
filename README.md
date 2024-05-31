@@ -9,7 +9,7 @@
 - [Коэффициент формульности](#коэффициент-формульности)
 - [Технологии и инструменты](#технологии-и-инструменты)
 - [Подготовка данных](#подготовка-данных)
-- Начало работы
+- [Установка и начало работы](#установка-и-начало-работы)
 - Результаты
 - Предложить изменения
 - Контакты
@@ -66,3 +66,55 @@
 | Конец одной песни + Начало новой песни                        | Конец одной песни Начало новой песни                              |
 
 Также учитывайте, что пакет не сможет проанализировать тексты, содержащие менее 35 слов.
+
+## Установка и начало работы
+
+1) Перед установкой пакета следует установить библиотеки, которые он использует.
+
+Код для облачной среды Google Colab:
+
+    !pip install -U spacy
+    !pip install -U spacy-lookups-data
+    !python -m spacy download ru_core_news_sm
+    !pip install pymorphy2
+
+2) Установите пакет formularity-rfs.
+
+Код для облачной среды Google Colab:
+    
+    !pip install formularity-rfs==0.2
+
+или
+
+    !pip install --upgrade git+https://github.com/valsidnenko/formularity_rfs.git
+
+3) Загрузите необходимые файлы для работы пакета collocations.txt и stopwords.txt вручную или с помощью команд.
+
+Код для облачной среды Google Colab:
+
+    !wget https://raw.githubusercontent.com/valsidnenko/formularity_rfs/main/stopwords.txt
+    !wget https://raw.githubusercontent.com/valsidnenko/formularity_rfs/main/collocations.txt
+
+4) Импортируйте загруженные библиотеки.
+
+Код для облачной среды Google Colab:
+
+    import re
+    import spacy
+    import pymorphy2
+    import numpy as np
+    from collections import defaultdict
+    from sklearn.feature_extraction.text import CountVectorizer
+    nlp = spacy.load("ru_core_news_sm")
+
+4) Импортируйте функцию анализа из пакета formularity_rfs.
+
+Код для облачной среды Google Colab:
+
+    from formularity.your_module import analyse
+
+5) Введите команду для анализа текстов.
+
+Код для облачной среды Google Colab:
+
+    analyse()
