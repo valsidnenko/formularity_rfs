@@ -1,3 +1,4 @@
+""" Импорт всех нужных для работы библиотек """
 import re
 import os
 import spacy
@@ -10,6 +11,7 @@ nlp = spacy.load("ru_core_news_sm")
 morph = pymorphy2.MorphAnalyzer()
 
 class FormularityRFS:
+    """ Загружаем файлы с фразеологизмами и стоп-словами """
     def __init__(self, collocations_file, stopwords_file):
         self.collocations = self.load_collocations(collocations_file)
         self.stopwords = self.load_stopwords(stopwords_file)
@@ -23,12 +25,14 @@ class FormularityRFS:
     def load_stopwords(self, filepath):
         with open(filepath, "r", encoding="utf-8") as f:
             return f.read().splitlines()
-    
+            
+    """ Функция для лемматизации текстов """
     def lemmatize_text(self, text):
         doc = nlp(text)
         lemmatized_words = [morph.parse(token.text)[0].normal_form for token in doc if not token.is_punct]
         return lemmatized_words
     
+    """ Функция для расчета коэффициента VocD """
     def calculate_vocd(self, lemmatized_words):
         sample_size = 35
         iterations = 1000
@@ -55,11 +59,13 @@ class FormularityRFS:
         mean_vocd_score = np.mean(vocd_scores)
         return mean_vocd_score
     
+    """ Функция для поиска междометий """
     def extract_interjections(self, song_text):
         doc = nlp(song_text)
         interjections = [token.text for token in doc if token.pos_ == 'INTJ']
         return interjections
-    
+
+    """ Функция для поиска n-грамм """
     def find_ngrams(self, text, min_len=2, max_len=14):
         vectorizer = CountVectorizer(ngram_range=(min_len, max_len), stop_words=self.stopwords).fit([text])
         ngrams_freq = vectorizer.transform([text]).toarray().flatten()
@@ -71,7 +77,8 @@ class FormularityRFS:
                 ngrams_count[ngram] += count
                 ngram_words.update(ngram.split())
         return ngrams_count, ngram_words
-    
+
+    """ Функция для фильтрации n-грамм """
     def filter_ngrams(self, ngrams):
         ngrams = sorted(ngrams, key=lambda x: len(x.split()), reverse=True)
         filtered_ngrams = []
@@ -79,7 +86,8 @@ class FormularityRFS:
             if not any(ngram in longer_ngram for longer_ngram in filtered_ngrams):
                 filtered_ngrams.append(ngram)
         return filtered_ngrams
-    
+
+    """ Функция для расчета формульности """
     def calculate_formulaicity(self, song_text):
         marked_text = song_text  
         interjections = self.extract_interjections(song_text)
@@ -128,17 +136,18 @@ class FormularityRFS:
 
         print("Лемматизированные слова:", lemmatized_words)
         print("Междометия:", interjections)
-        print("Биграммы:", dash)
+        print("Биномы:", dash)
         print("Найденные фразеологизмы:", found_collocations)
         print("Найденные уникальные n-граммы:", filtered_ngrams)
         print("Коэффициент для междометий:", 0.1 * interjection_count)
         print("Коэффициент для фразеологизмов:", 0.1 * collocation_count)
-        print("Коэффициент для биграмм:", 0.1 * dash_count)
+        print("Коэффициент для биномов:", 0.1 * dash_count)
         print("Коэффициент для n-грамм:", score_increase)
         print("Коэффициент VOCD:", vocd_score)
 
         return formulaicity_score, marked_text, filtered_ngrams
 
+""" Функция analyse() """
 def analyse(input_file="songs.txt", output_file="results.html", collocations_file="collocations.txt", stopwords_file="stopwords.txt"):
     if not os.path.exists(input_file):
         with open(input_file, "w", encoding="utf-8") as f:
@@ -146,19 +155,16 @@ def analyse(input_file="songs.txt", output_file="results.html", collocations_fil
         print(f"Файл {input_file} появится в течение минуты. Пожалуйста, добавьте тексты песен в {input_file}, разделяя их знаком +, и запустите код заново.")
         return
 
-    # Read collocations
     collocations = []
     if os.path.exists(collocations_file):
         with open(collocations_file, "r", encoding="utf-8") as f:
             collocations = [line.strip() for line in f.readlines() if line.strip()]
 
-    # Read stopwords
     stopwords = []
     if os.path.exists(stopwords_file):
         with open(stopwords_file, "r", encoding="utf-8") as f:
             stopwords = f.read().splitlines()
 
-    # Initialize analyzer object
     analyzer = FormularityRFS(collocations_file, stopwords_file)
 
     if os.path.exists(input_file) and os.path.getsize(input_file) > 0:
@@ -174,12 +180,12 @@ def analyse(input_file="songs.txt", output_file="results.html", collocations_fil
             song = song.strip()
             if song:
                 formulaicity_score, marked_text, filtered_ngrams = analyzer.calculate_formulaicity(song)
+                rounded_formulaicity_score = round(formulaicity_score, 3) 
                 ngram_list_html = "<ul>" + "".join([f"<li>{ngram}</li>" for ngram in filtered_ngrams]) + "</ul>"
-                results.append(f"<h2>Песня {i+1}</h2><p>{marked_text}</p><p><strong>Найденные n-граммы:</strong> {ngram_list_html}</p><p><strong>Formulaicity coefficient:</strong> {formulaicity_score}</p>")
+                results.append(f"<h2>Песня {i+1}</h2><p>{marked_text}</p><p><strong>Найденные n-граммы:</strong> {ngram_list_html}</p><p><strong>Коэффициент формульности:</strong> {rounded_formulaicity_score}</p>")
 
         results.append("</body></html>")
 
-        # Write results to output file
         with open(output_file, "w", encoding="utf-8") as f:
             f.write("\n\n".join(results))
 
