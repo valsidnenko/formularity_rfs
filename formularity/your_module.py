@@ -1,4 +1,3 @@
-""" Импорт всех нужных для работы библиотек """
 import re
 import os
 import spacy
@@ -25,7 +24,7 @@ class FormularityRFS:
     def load_stopwords(self, filepath):
         with open(filepath, "r", encoding="utf-8") as f:
             return f.read().splitlines()
-            
+
     """ Функция для лемматизации текстов """
     def lemmatize_text(self, text):
         doc = nlp(text)
@@ -89,63 +88,64 @@ class FormularityRFS:
 
     """ Функция для расчета формульности """
     def calculate_formulaicity(self, song_text):
-        marked_text = song_text  
-        interjections = self.extract_interjections(song_text)
-        for interjection in interjections:
-            marked_text = re.sub(f"(?i)\\b{re.escape(interjection)}\\b", f"<strong style='color: red;'>{interjection}</strong>", marked_text)
+      marked_text = song_text  
+      interjections = self.extract_interjections(song_text)
+      for interjection in interjections:
+          marked_text = re.sub(f"(?i)\\b{re.escape(interjection)}\\b", f"<strong style='color: red;'>{interjection}</strong>", marked_text)
 
-        dash_pattern = r"([А-Яа-я\w]+-[А-Яа-я\w]+(?!-?(Кое|кое|либо|то|нибудь|ка)))"
-        dash = re.findall(dash_pattern, song_text)
-        dash = [match[0] for match in dash]
-        dash = list(set(dash) - set(interjections))
-        for d in dash:
-            marked_text = re.sub(f"(?i){re.escape(d)}", f"<strong style='color: purple;'>{d}</strong>", marked_text)
+      # Обновленное регулярное выражение для поиска биномов (без look-behind)
+      dash_pattern = r"\b[А-Яа-я\w]+-[А-Яа-я\w]+\b"
+      dash_matches = re.findall(dash_pattern, song_text, re.IGNORECASE)
+      dash = [d for d in dash_matches if not re.match(r"(?i)(по|кое|[вв]о)-", d) and not re.search(r"-(то|либо|нибудь|таки|ка)$", d)]
+      dash = list(set(dash) - set(interjections))
+      for d in dash:
+          marked_text = re.sub(f"(?i){re.escape(d)}", f"<strong style='color: purple;'>{d}</strong>", marked_text)
 
-        found_collocations = []
-        for col in self.collocations:
-            if col in song_text:
-                found_collocations.append(col)
-                marked_text = re.sub(f"(?i){re.escape(col)}", f"<strong style='color: blue;'>{col}</strong>", marked_text)
+      found_collocations = []
+      for col in self.collocations:
+          if col in song_text:
+              found_collocations.append(col)
+              marked_text = re.sub(f"(?i){re.escape(col)}", f"<strong style='color: blue;'>{col}</strong>", marked_text)
 
-        interjection_count = len(interjections)
-        dash_count = len(dash)
-        collocation_count = len(found_collocations)
+      interjection_count = len(interjections)
+      dash_count = len(dash)
+      collocation_count = len(found_collocations)
 
-        total_coefficient = 0.1 * interjection_count + 0.1 * dash_count + 0.1 * collocation_count
+      total_coefficient = 0.1 * interjection_count + 0.1 * dash_count + 0.1 * collocation_count
 
-        lemmatized_words = self.lemmatize_text(song_text)
+      lemmatized_words = self.lemmatize_text(song_text)
 
-        try:
-            vocd_score = self.calculate_vocd(lemmatized_words)
-        except ValueError:
-            vocd_score = None
-            print("Невозможно посчитать VOCD")
+      try:
+          vocd_score = self.calculate_vocd(lemmatized_words)
+      except ValueError:
+          vocd_score = None
+          print("Невозможно посчитать VOCD")
 
-        formulaicity_score = vocd_score if vocd_score is not None else 0
-        formulaicity_score += total_coefficient
+      formulaicity_score = vocd_score if vocd_score is not None else 0
+      formulaicity_score += total_coefficient
 
-        ngrams_count, ngram_words = self.find_ngrams(song_text)
-        unique_ngrams = [ngram for ngram in ngrams_count if ngrams_count[ngram] > 1]
-        filtered_ngrams = self.filter_ngrams(unique_ngrams)
-        score_increase = 0.1 * len(filtered_ngrams)
+      ngrams_count, ngram_words = self.find_ngrams(song_text)
+      unique_ngrams = [ngram for ngram in ngrams_count if ngrams_count[ngram] > 1]
+      filtered_ngrams = self.filter_ngrams(unique_ngrams)
+      score_increase = 0.1 * len(filtered_ngrams)
 
-        formulaicity_score += score_increase
+      formulaicity_score += score_increase
 
-        for word in ngram_words:
-            marked_text = re.sub(f"(?i)\\b{re.escape(word)}\\b", f"<strong style='color: green; text-decoration: underline;'>{word}</strong>", marked_text)
+      for word in ngram_words:
+          marked_text = re.sub(f"(?i)\\b{re.escape(word)}\\b", f"<strong style='color: green; text-decoration: underline;'>{word}</strong>", marked_text)
 
-        print("Лемматизированные слова:", lemmatized_words)
-        print("Междометия:", interjections)
-        print("Биномы:", dash)
-        print("Найденные фразеологизмы:", found_collocations)
-        print("Найденные уникальные n-граммы:", filtered_ngrams)
-        print("Коэффициент для междометий:", 0.1 * interjection_count)
-        print("Коэффициент для фразеологизмов:", 0.1 * collocation_count)
-        print("Коэффициент для биномов:", 0.1 * dash_count)
-        print("Коэффициент для n-грамм:", score_increase)
-        print("Коэффициент VOCD:", vocd_score)
+      print("Лемматизированные слова:", lemmatized_words)
+      print("Междометия:", interjections)
+      print("Биномы:", dash)
+      print("Найденные фразеологизмы:", found_collocations)
+      print("Найденные уникальные n-граммы:", filtered_ngrams)
+      print("Коэффициент для междометий:", 0.1 * interjection_count)
+      print("Коэффициент для фразеологизмов:", 0.1 * collocation_count)
+      print("Коэффициент для биномов:", 0.1 * dash_count)
+      print("Коэффициент для n-грамм:", score_increase)
+      print("Коэффициент VOCD:", vocd_score)
 
-        return formulaicity_score, marked_text, filtered_ngrams
+      return formulaicity_score, marked_text, filtered_ngrams
 
 """ Функция analyse() """
 def analyse(input_file="songs.txt", output_file="results.html", collocations_file="collocations.txt", stopwords_file="stopwords.txt"):
@@ -154,18 +154,6 @@ def analyse(input_file="songs.txt", output_file="results.html", collocations_fil
             f.write("")
         print(f"Файл {input_file} появится в течение минуты. Пожалуйста, добавьте тексты песен в {input_file}, разделяя их знаком +, и запустите код заново.")
         return
-
-    collocations = []
-    if os.path.exists(collocations_file):
-        with open(collocations_file, "r", encoding="utf-8") as f:
-            collocations = [line.strip() for line in f.readlines() if line.strip()]
-
-    stopwords = []
-    if os.path.exists(stopwords_file):
-        with open(stopwords_file, "r", encoding="utf-8") as f:
-            stopwords = f.read().splitlines()
-
-    analyzer = FormularityRFS(collocations_file, stopwords_file)
 
     if os.path.exists(input_file) and os.path.getsize(input_file) > 0:
         with open(input_file, "r", encoding="utf-8") as f:
@@ -179,6 +167,10 @@ def analyse(input_file="songs.txt", output_file="results.html", collocations_fil
         for i, song in enumerate(songs):
             song = song.strip()
             if song:
+              # Убираем перенос строки, пустые строки и заменяем «ё» на «е»
+                song = " ".join([line for line in song.splitlines() if line.strip()]).replace("ё", "е")
+
+                analyzer = FormularityRFS(collocations_file, stopwords_file)
                 formulaicity_score, marked_text, filtered_ngrams = analyzer.calculate_formulaicity(song)
                 rounded_formulaicity_score = round(formulaicity_score, 3) 
                 ngram_list_html = "<ul>" + "".join([f"<li>{ngram}</li>" for ngram in filtered_ngrams]) + "</ul>"
@@ -192,5 +184,3 @@ def analyse(input_file="songs.txt", output_file="results.html", collocations_fil
         print(f"Результаты записаны в файл {output_file}, он появится в течение минуты.")
     else:
         print(f"Файл {input_file} появится в течение минуты. Пожалуйста, добавьте тексты песен в {input_file}, разделяя их знаком +, и запустите код снова.")
-
-
